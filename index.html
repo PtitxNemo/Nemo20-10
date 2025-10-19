@@ -3,19 +3,13 @@
 <head>
     <meta charset="utf-8">
     <title>20/10</title>
-    <!-- Allow proper zooming / accessibility on mobile -->
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        :root {
-            font-size: 16px;
-        }
-        html, body {
-            height: 100%;
-            margin: 0;
-        }
+        :root { font-size: 16px; }
+        html, body { height: 100%; margin: 0; }
         body {
             font-family: "Helvetica Neue", "Luxi Sans", "DejaVu Sans", Tahoma, "Hiragino Sans GB", "Microsoft Yahei", sans-serif;
-            background: #79a8ae;
+            background: linear-gradient(to bottom, rgb(203, 235, 219) 0%, rgb(55, 148, 192) 120%);
             color: #CFEBE4;
             font-size: 1rem;
             line-height: 1.4;
@@ -23,24 +17,20 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             touch-action: manipulation;
+            background-clip: padding-box;
         }
         a { color: #ebf7f4; }
 
-        .body--ready {
-            background: linear-gradient(to bottom, rgb(203, 235, 219) 0%, rgb(55, 148, 192) 120%);
-        }
+        .body--ready { background: linear-gradient(to bottom, rgb(203, 235, 219) 0%, rgb(55, 148, 192) 120%); }
 
-        /* Frame container:
-           - On desktop and mobile landscape: fill the viewport (like desktop)
-           - On mobile portrait: centered 16:9 box so it looks neat on phone
-        */
+        /* Frame container: fill viewport on desktop/landscape, portrait phones have 9:16 visual */
         .frame {
             position: absolute;
             inset: 0;
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background: transparent;
+            background: inherit; /* match body background to avoid edge artifacts */
             display: block;
         }
         /* children (canvases / content) fill the frame */
@@ -53,27 +43,23 @@
             display: block;
         }
 
-        /* Only apply the 16:9 "boxed" behavior on narrow screens in portrait */
+        /* Portrait phones: centered 9:16 area without side gaps (using aspect-ratio) */
         @media (max-width: 900px) and (orientation: portrait) {
             .frame {
                 position: relative;
                 width: 100%;
                 height: auto;
-                margin: 0;                /* Removed margin to avoid background showing at edges */
+                margin: 0;                /* no side gaps */
                 max-width: 100%;
                 box-sizing: border-box;
-                padding: 10px 0;      /* keep top/bottom spacing but not side gaps */
-            }
-            /* aspect ratio box: 9/16 = 56.25% */
-            .frame::before {
-                content: "";
-                display: block;
-                padding-top: 56.25%;
+                padding: 10px 0;          /* top/bottom breathing room */
+                aspect-ratio: 9 / 16;     /* safer than ::before trick */
+                overflow: hidden;
+                background: inherit;
             }
             .frame > * {
                 position: absolute;
-                top: 0;
-                left: 0;
+                inset: 0;
                 width: 100%;
                 height: 100%;
             }
@@ -107,7 +93,7 @@
             transform: rotate(360deg);
         }
 
-        /* Countdown / caption placed inside the frame (so it's always visible relative to the visual area) */
+        /* Countdown / caption placed inside the frame */
         .text {
             position: absolute;
             bottom: 4%;
@@ -118,27 +104,22 @@
             font-weight: 700;
             z-index: 60;
             color: #ed3073;
-            background: rgba(255,255,255,0.03);
+            /* use slight solid overlay + small blur to improve contrast without heavy artefacts */
+            background: rgba(0,0,0,0.18);
             padding: 8px 12px;
             border-radius: 10px;
             box-sizing: border-box;
             pointer-events: none;
             font-size: 0.95rem;
             line-height: 1.2;
-            -webkit-backdrop-filter: blur(4px);
-            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(2px);
+            backdrop-filter: blur(2px);
         }
 
-        .canvas {
-            z-index: 10; /* particle canvas */
-            touch-action: none;
-        }
-        #rainCanvas {
-            z-index: 5; /* background rain */
-            pointer-events: none;
-        }
+        .canvas { z-index: 10; touch-action: none; } /* particle canvas */
+        #rainCanvas { z-index: 5; pointer-events: none; } /* background rain */
 
-        /* Fallback for very small screens: increase text readability */
+        /* Fallback for very small screens */
         @media (max-width: 420px) {
             .text { font-size: 0.95rem; padding: 10px 14px; bottom: 6%; }
             img#logo { width: 34vw; max-width: 110px; }
@@ -157,21 +138,20 @@
 <body>
 <div class="frame">
     <div class="cs">
-        <!-- Put a small logo/title inside the framed visual so on phones it is visible above the canvas -->
+        <!-- small logo/title inside the framed visual -->
         <img id="logo" alt="Logo" src="https://via.placeholder.com/256x256.png?text=♥">
     </div>
 
     <canvas id="rainCanvas"></canvas>
     <canvas class="canvas"></canvas>
 
-    <!-- Move the text inside the frame so it stays visible relative to the canvas on phones -->
     <p class="text">Đã đươc
         <span id="span_dt_dt"></span><br>quen nhau rồi
     </p>
 </div>
 
 <script>
-    // Countdown text (unchanged except still targets #span_dt_dt)
+    // Countdown text
     function show_date_time() {
         window.setTimeout(show_date_time, 1000);
         var BirthDay = new Date("2025-09-16 13:00:00");
@@ -192,7 +172,7 @@
     }
     show_date_time();
 
-    // -- Rain canvas: size to the .frame content area.
+    // Rain canvas sizing (to .frame)
     const frame = document.querySelector('.frame');
     const rainCanvas = document.getElementById('rainCanvas');
     const rainCtx = rainCanvas.getContext('2d');
@@ -203,32 +183,25 @@
     let drops = [];
 
     function resizeRainCanvas() {
-        // Measure the frame's content box (works for both full-screen and 16:9 boxed modes)
         const w = frame.clientWidth || window.innerWidth;
         const h = frame.clientHeight || window.innerHeight;
         const dpr = window.devicePixelRatio || 1;
 
-        // Set logical CSS size and backing store for crisp rendering
         rainCanvas.style.width = w + 'px';
         rainCanvas.style.height = h + 'px';
         rainCanvas.width = Math.max(1, Math.round(w * dpr));
         rainCanvas.height = Math.max(1, Math.round(h * dpr));
 
-        // scale the drawing operations to device pixel ratio
         rainCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
         columns = Math.max(1, Math.floor(w / fontSize));
         drops.length = columns;
-        for (let i = 0; i < columns; i++) {
-            if (!drops[i]) drops[i] = 1;
-        }
+        for (let i = 0; i < columns; i++) if (!drops[i]) drops[i] = 1;
     }
     resizeRainCanvas();
     window.addEventListener('resize', resizeRainCanvas);
     window.addEventListener('orientationchange', function () {
-        // slight delay to allow layout changes on some mobile browsers
         setTimeout(resizeRainCanvas, 200);
-        // also resize partner canvas (S.Drawing) after layout settles
         setTimeout(function () { if (window.S && S.Drawing && S.Drawing.adjustCanvas) S.Drawing.adjustCanvas(); }, 250);
     });
 
@@ -248,7 +221,7 @@
 </script>
 
 <script>
-    // Particle shape system (kept logic, but canvases are sized to the .frame). Minor safety: guard S.Drawing usage.
+    // Particle shape system (kept logic, canvases sized to .frame)
     var S = {
         init: function () {
             S.Drawing.init('.canvas');
@@ -317,7 +290,7 @@
         };
     }());
 
-    // ... rest of S (UI, Point, Color, Dot, ShapeBuilder, Shape) unchanged to preserve behavior ...
+    // ... rest of S (UI, Point, Color, Dot, ShapeBuilder, Shape) unchanged from your original file ...
     S.UI = (function () {
         var interval,
             currentAction,
