@@ -59,9 +59,10 @@
                 position: relative;
                 width: 100%;
                 height: auto;
-                margin: 18px auto;
-                max-width: 920px;
+                margin: 0;                /* Removed margin to avoid background showing at edges */
+                max-width: 100%;
                 box-sizing: border-box;
+                padding: 10px 0;      /* keep top/bottom spacing but not side gaps */
             }
             /* aspect ratio box: 9/16 = 56.25% */
             .frame::before {
