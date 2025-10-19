@@ -1,10 +1,14 @@
 <!doctype html>
-<html>
+<html lang="vi">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
     <title>20/10</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <!-- Allow proper zooming / accessibility on mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
+        :root {
+            font-size: 16px;
+        }
         html, body {
             height: 100%;
             margin: 0;
@@ -13,9 +17,12 @@
             font-family: "Helvetica Neue", "Luxi Sans", "DejaVu Sans", Tahoma, "Hiragino Sans GB", "Microsoft Yahei", sans-serif;
             background: #79a8ae;
             color: #CFEBE4;
-            font-size: 18px;
-            line-height: 2;
-            letter-spacing: 1.2px;
+            font-size: 1rem;
+            line-height: 1.4;
+            letter-spacing: 0.6px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            touch-action: manipulation;
         }
         a { color: #ebf7f4; }
 
@@ -25,16 +32,16 @@
 
         /* Frame container:
            - On desktop and mobile landscape: fill the viewport (like desktop)
-           - On mobile portrait: keep a centered 16:9 box (so it looks like desktop framed)
+           - On mobile portrait: centered 16:9 box so it looks neat on phone
         */
         .frame {
             position: absolute;
-            top: 0;
-            left: 0;
+            inset: 0;
             width: 100%;
             height: 100%;
             overflow: hidden;
             background: transparent;
+            display: block;
         }
         /* children (canvases / content) fill the frame */
         .frame > * {
@@ -52,8 +59,9 @@
                 position: relative;
                 width: 100%;
                 height: auto;
-                margin: 0 auto;
-                max-width: 100%;
+                margin: 18px auto;
+                max-width: 920px;
+                box-sizing: border-box;
             }
             /* aspect ratio box: 9/16 = 56.25% */
             .frame::before {
@@ -68,60 +76,101 @@
                 width: 100%;
                 height: 100%;
             }
-            /* keep fixed-position overlays like text visible at bottom of viewport */
         }
 
-        .text {
-            position: fixed;
-            bottom: 20px;
+        /* Small header / logo area inside the framed box */
+        .cs {
+            position: absolute;
+            top: 10px;
+            left: 0;
+            right: 0;
+            z-index: 40;
             text-align: center;
-            width: 100%;
-            font-weight: bold;
-            z-index: 50;
+            pointer-events: none;
         }
+        img#logo {
+            width: 26vw;
+            max-width: 128px;
+            min-width: 64px;
+            height: auto;
+            border-radius: 999px;
+            box-shadow: 0px 0px 40px rgba(63, 81, 181, 0.72);
+            border: 3px solid #00a0ff;
+            margin: 8px auto;
+            transition: transform 1s, box-shadow 0.25s;
+            pointer-events: auto;
+            display: inline-block;
+        }
+        #logo:hover {
+            box-shadow: 0 0 14px #fff;
+            transform: rotate(360deg);
+        }
+
+        /* Countdown / caption placed inside the frame (so it's always visible relative to the visual area) */
+        .text {
+            position: absolute;
+            bottom: 4%;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            width: calc(100% - 32px);
+            font-weight: 700;
+            z-index: 60;
+            color: #ed3073;
+            background: rgba(255,255,255,0.03);
+            padding: 8px 12px;
+            border-radius: 10px;
+            box-sizing: border-box;
+            pointer-events: none;
+            font-size: 0.95rem;
+            line-height: 1.2;
+            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px);
+        }
+
         .canvas {
             z-index: 10; /* particle canvas */
+            touch-action: none;
         }
         #rainCanvas {
             z-index: 5; /* background rain */
             pointer-events: none;
         }
-        img#logo {
-            width: 128px;
-            border-radius: 200px;
-            box-shadow: 0px 0px 40px rgba(63, 81, 181, 0.72);
-            border: 3px solid #00a0ff;
-            margin: 20px auto;
-            transition: all 1s;
+
+        /* Fallback for very small screens: increase text readability */
+        @media (max-width: 420px) {
+            .text { font-size: 0.95rem; padding: 10px 14px; bottom: 6%; }
+            img#logo { width: 34vw; max-width: 110px; }
         }
-        #logo:hover {
-            box-shadow: 0 0 10px #fff;
-            transform: rotate(360deg);
-        }
-        .cs {
-            width: 100%;
-            height: 100%;
-            margin: 0 auto;
-            position: absolute;
-            text-align: center;
-            z-index: 20;
+
+        /* Desktop adjustments */
+        @media (min-width: 700px) {
+            .frame { position: absolute; inset: 0; }
+            .cs { top: 18px; }
+            .text { font-size: 1.05rem; bottom: 20px; width: auto; left: 50%; transform: translateX(-50%); pointer-events: none; }
+            img#logo { max-width: 140px; }
         }
     </style>
 </head>
 
 <body>
 <div class="frame">
-    <div class="cs"></div>
+    <div class="cs">
+        <!-- Put a small logo/title inside the framed visual so on phones it is visible above the canvas -->
+        <img id="logo" alt="Logo" src="https://via.placeholder.com/256x256.png?text=♥">
+    </div>
+
     <canvas id="rainCanvas"></canvas>
     <canvas class="canvas"></canvas>
+
+    <!-- Move the text inside the frame so it stays visible relative to the canvas on phones -->
+    <p class="text">Đã đươc
+        <span id="span_dt_dt"></span><br>quen nhau rồi
+    </p>
 </div>
 
-<p class="text" style="color: #ed3073;">Đã đươc
-    <span id="span_dt_dt"></span><br> quen nhau rùi
-</p>
-
 <script>
-    // Countdown text (unchanged)
+    // Countdown text (unchanged except still targets #span_dt_dt)
     function show_date_time() {
         window.setTimeout(show_date_time, 1000);
         var BirthDay = new Date("2025-09-16 13:00:00");
@@ -137,7 +186,8 @@
         var e_minsold = (e_hrsold - hrsold) * 60;
         var minsold = Math.floor((e_hrsold - hrsold) * 60);
         var seconds = Math.floor((e_minsold - minsold) * 60);
-        document.getElementById('span_dt_dt').innerHTML = daysold + " Ngày " + hrsold + " Giờ " + minsold + " Phút " + seconds + " Giây ";
+        var el = document.getElementById('span_dt_dt');
+        if (el) el.innerHTML = daysold + " Ngày " + hrsold + " Giờ " + minsold + " Phút " + seconds + " Giây ";
     }
     show_date_time();
 
@@ -197,7 +247,7 @@
 </script>
 
 <script>
-    // Particle shape system (modified to size canvas to parent .frame with devicePixelRatio support)
+    // Particle shape system (kept logic, but canvases are sized to the .frame). Minor safety: guard S.Drawing usage.
     var S = {
         init: function () {
             S.Drawing.init('.canvas');
@@ -266,10 +316,7 @@
         };
     }());
 
-    // ... rest of S (UI, Point, Color, Dot, ShapeBuilder, Shape) stays same as original to preserve behavior ...
-    // For brevity I'm reusing the original implementation below (unchanged logic),
-    // but it will now render into a canvas sized to the .frame box (portrait boxed or full-screen in landscape).
-
+    // ... rest of S (UI, Point, Color, Dot, ShapeBuilder, Shape) unchanged to preserve behavior ...
     S.UI = (function () {
         var interval,
             currentAction,
